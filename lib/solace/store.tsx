@@ -1,0 +1,7 @@
+'use client';
+import { createContext,useContext,useEffect,useState,ReactNode } from 'react';
+import { Store,seed } from './data';
+import { toast } from 'sonner';
+const Context=createContext<{data:Store;setData:React.Dispatch<React.SetStateAction<Store>>;clientId:string;setClientId:(id:string)=>void;ready:boolean}|null>(null);
+export function SolaceProvider({children}:{children:ReactNode}){const [data,setData]=useState<Store>(()=>seed());const [clientId,setClientId]=useState('all');const [ready,setReady]=useState(false);useEffect(()=>{let active=true;queueMicrotask(()=>{if(!active)return;try{const rememberedClient=sessionStorage.getItem('solace-client');if(rememberedClient)setClientId(rememberedClient);const saved=localStorage.getItem('solace-v1');if(saved){const d=JSON.parse(saved);if(d.clients&&d.results)setData(d)}}catch{toast.error('Saved demo could not be loaded. Starting with sample data.')}setReady(true)});return()=>{active=false}},[]);useEffect(()=>{if(ready)sessionStorage.setItem('solace-client',clientId)},[clientId,ready]);useEffect(()=>{if(ready)try{localStorage.setItem('solace-v1',JSON.stringify(data))}catch{toast.error('Browser storage is full. Changes will last for this visit.')}},[data,ready]);return <Context.Provider value={{data,setData,clientId,setClientId,ready}}>{ready?children:<div className="initial-load" role="status"><strong>solace.</strong><span>Opening your workspace…</span></div>}</Context.Provider>}
+export function useSolace(){const value=useContext(Context);if(!value)throw Error('Missing SolaceProvider');return value}
