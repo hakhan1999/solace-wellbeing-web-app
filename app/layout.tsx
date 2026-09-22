@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SolaceProvider } from "@/lib/solace/store";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 
 export const metadata: Metadata = {
   title: "Solace · Employee Wellbeing",
@@ -18,7 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><SolaceProvider>{children}</SolaceProvider></body>
+      <body className={`${GeistSans.className} antialiased`}>
+        <SolaceProvider>{children}</SolaceProvider>
+      </body>
     </html>
   );
 }

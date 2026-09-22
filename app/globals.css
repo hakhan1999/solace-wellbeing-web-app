@@ -19,14 +19,6 @@
   scrollbar-gutter: stable;
 }
 
-:root {
-  --font-sans: "Lato", sans-serif;
-}
-
-body {
-  font-family: "__nextjs-Geist";
-}
-
 h1,
 h2,
 h3,
@@ -37,7 +29,6 @@ input,
 textarea,
 select,
 button {
-  font-family: "__nextjs-Geist";
 }
 
 :root {
@@ -111,10 +102,8 @@ button {
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 * {
@@ -124,7 +113,6 @@ body {
   margin: 0;
   background: #f7f8f9;
   color: #263e3a;
-  font-family: "__nextjs-Geist";
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -330,7 +318,6 @@ small {
   margin-bottom: 12px;
 }
 .sidebar-note strong {
-  font-family: "__nextjs-Geist";
   font-size: 23px;
   font-weight: 400;
   line-height: 1.3;
@@ -557,7 +544,6 @@ small {
   margin-bottom: 9px;
 }
 .featured h2 {
-  font-family: "__nextjs-Geist";
   font-size: 31px;
   font-weight: 400;
   letter-spacing: -0.6px;
@@ -1114,7 +1100,6 @@ textarea {
   padding: 9px 12px;
   font-size: 14px;
   width: 100%;
-  font-family: inherit;
 }
 input[type="color"] {
   height: 42px;
@@ -1388,7 +1373,6 @@ textarea {
   margin-bottom: 8px;
 }
 .stage-summary h2 {
-  font-family: "__nextjs-Geist";
   font-size: 24px;
   font-weight: 400;
   max-width: 450px;
@@ -2140,7 +2124,6 @@ textarea {
   flex: 1;
 }
 .report-builder h2 {
-  font-family: "__nextjs-Geist";
   font-size: 24px;
   font-weight: 400;
 }
