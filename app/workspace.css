@@ -48,7 +48,7 @@
     margin-right: 10px;
   }
   .brand-period { color: #bbd89c; }
-  .workspace-label { color: #a2bcb0; font-size: 10px; letter-spacing: 1.5px; margin-top: 30px; }
+  .workspace-label { color: #a2bcb0; font-size: 10px; letter-spacing: 1.5px; }
   :is(.app-sidebar, [data-mobile="true"]) [data-slot="sidebar-content"] { gap: 22px; }
   :is(.app-sidebar, [data-mobile="true"]) [data-slot="sidebar-menu"] { gap: 6px; }
   :is(.app-sidebar, [data-mobile="true"]) [data-slot="sidebar-menu-button"] {

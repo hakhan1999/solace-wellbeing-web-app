@@ -267,7 +267,6 @@ small {
   letter-spacing: 1.8px;
   color: #85928d;
   font-weight: 600;
-  margin-top: 28px;
 }
 .app-sidebar [data-slot="sidebar-content"] {
   gap: 20px;
@@ -4058,6 +4057,7 @@ textarea {
   }
 }
 
-.form-grid legend, .form-grid span{
+.form-grid legend,
+.form-grid span {
   font-size: 13px;
 }

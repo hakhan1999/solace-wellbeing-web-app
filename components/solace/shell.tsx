@@ -51,6 +51,7 @@ import { seed } from "@/lib/solace/data";
 import { WebMCP } from "./webmcp";
 import { Pick, Avatar, Action } from "./ui";
 import { ClipboardCheck, CalendarDays, FolderOpen } from "lucide-react";
+import Image from "next/image";
 const nav = [
   ["/", "Overview", LayoutDashboard],
   ["/clients", "Corporate clients", Building2],
@@ -75,10 +76,17 @@ export function Shell({ children }: { children: ReactNode }) {
       <Sidebar className="app-sidebar">
         <SidebarHeader>
           <Link className="brand" href="/">
-            <span className="brand-symbol">
+            <Image
+              src="/logo.png"
+              alt="Solace logo"
+              width={190}
+              height={51}
+              priority
+            />
+            {/* <span className="brand-symbol">
               <Leaf size={26} />
             </span>
-            solace<span className="brand-period">.</span>
+            solace<span className="brand-period">.</span> */}
           </Link>
           <div className="workspace-label">CONSULTANT WORKSPACE</div>
         </SidebarHeader>
