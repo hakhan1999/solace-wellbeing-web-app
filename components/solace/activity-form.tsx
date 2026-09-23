@@ -237,7 +237,6 @@ export function ActivityForm({
     const activity: ProgramEvent = {
       ...initial,
       id: initial?.id || uid(),
-      id: initial?.id || uid(),
       engagementId,
       type: "Activity",
 
