@@ -375,7 +375,7 @@ function AssessmentForm({ onClose }: { onClose: () => void }) {
             </div>
 
             <label className="assessment-form-field">
-              Additional details
+             <span> Additional details</span>
 
               <textarea
                 rows={4}

@@ -93,14 +93,14 @@ export function Shell({ children }: { children: ReactNode }) {
                   >
                     <Icon />
                     <span>{label}</span>
-                    {label === "Engagements" && (
+                    {/* {label === "Engagements" && (
                       <span className="nav-count">
                         {
                           data.engagements.filter((e) => e.status === "Active")
                             .length
                         }
                       </span>
-                    )}
+                    )} */}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -135,6 +135,7 @@ button {
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  font-size: 13px;
 }
 a {
   text-decoration: none;
@@ -3881,4 +3882,8 @@ textarea {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.assessment-form-field span {
+    font-size: 13px;
 }
