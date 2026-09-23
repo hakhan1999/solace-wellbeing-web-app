@@ -90,7 +90,7 @@ export function EditForm({
       color: "#176456",
       size: "51–200",
       industry: "Technology",
-      template: templates[0].name,
+      template: "Custom program",
       category: kind === "event" ? "Yoga" : "Physical",
       phase: defaultPhase || "Pre-assessment",
       date: day(1),
@@ -197,12 +197,6 @@ export function EditForm({
       },
       { key: "start", label: "Start date", type: "date" },
       { key: "end", label: "End date", type: "date" },
-      {
-        key: "template",
-        label: "Program template",
-        options: [...templates.map((t) => t.name), "Custom program"],
-        wide: true,
-      },
     ],
     employee: [
       { key: "name", label: "Full name" },

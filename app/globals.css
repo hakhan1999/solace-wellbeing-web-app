@@ -1427,7 +1427,7 @@ textarea {
   gap: 23px;
   height: 45px !important;
   margin-bottom: 6px;
-  overflow-x: auto;
+  /* overflow-x: auto; */
 }
 .section-tabs [data-slot="tabs-trigger"] {
   padding: 10px 2px !important;

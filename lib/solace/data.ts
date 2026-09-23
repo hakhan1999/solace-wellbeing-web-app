@@ -530,3 +530,103 @@ export function seed(): Store {
     ],
   };
 }
+
+
+export function saveEmployeeActivity(
+  store: Store,
+  activityId: string,
+  employeeId: string,
+  edited: Event,
+  splitId: string
+): Pick<Store, "events" | "activityAssessments"> {
+  const source = store.events.find(
+    (event) => event.id === activityId
+  );
+
+  if (!source) {
+    return {
+      events: store.events,
+      activityAssessments: store.activityAssessments,
+    };
+  }
+
+  const engagement = store.engagements.find(
+    (item) => item.id === source.engagementId
+  );
+
+  const assignedIds = Array.from(
+    new Set(
+      source.assignedEmployeeIds ??
+        store.employees
+          .filter(
+            (employee) =>
+              employee.clientId === engagement?.clientId &&
+              employee.engagementId === source.engagementId &&
+              employee.status === "Active" &&
+              (source.audience === "All employees" ||
+                employee.department === source.audience)
+          )
+          .map((employee) => employee.id)
+    )
+  );
+
+  if (!assignedIds.includes(employeeId)) {
+    return {
+      events: store.events,
+      activityAssessments: store.activityAssessments,
+    };
+  }
+
+  const remainingIds = assignedIds.filter(
+    (id) => id !== employeeId
+  );
+
+  // A shared activity becomes a separate entry for this employee.
+  // An already individual activity keeps its existing ID.
+  const savedId = remainingIds.length ? splitId : source.id;
+
+  const individualActivity: Event = {
+    ...source,
+    ...edited,
+    id: savedId,
+    engagementId: source.engagementId,
+    type: "Activity",
+    assignmentMode: "single",
+    audience: "Selected employees",
+    assignedEmployeeIds: [employeeId],
+    attendees: source.attendees.filter(
+      (id) => id === employeeId
+    ),
+  };
+
+  return {
+    events: store.events.flatMap((event) => {
+      if (event.id !== source.id) return [event];
+
+      if (!remainingIds.length) {
+        return [individualActivity];
+      }
+
+      return [
+        {
+          ...source,
+          audience: "Selected employees",
+          assignedEmployeeIds: remainingIds,
+          attendees: source.attendees.filter(
+            (id) => id !== employeeId
+          ),
+        },
+        individualActivity,
+      ];
+    }),
+
+    // Keep this employee's assessments linked to their edited activity.
+    activityAssessments: store.activityAssessments?.map(
+      (assessment) =>
+        assessment.activityId === source.id &&
+        assessment.employeeId === employeeId
+          ? { ...assessment, activityId: savedId }
+          : assessment
+    ),
+  };
+}

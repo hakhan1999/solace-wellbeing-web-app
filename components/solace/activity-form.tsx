@@ -20,7 +20,11 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSolace } from "@/lib/solace/store";
-import { uid, type Event as ProgramEvent } from "@/lib/solace/data";
+import {
+  uid,
+  saveEmployeeActivity,
+  type Event as ProgramEvent,
+} from "@/lib/solace/data";
 import { Action, Pick } from "./ui";
 import {
   saveDocumentFiles,
@@ -41,12 +45,14 @@ type AssignmentMode = "single" | "multiple";
 type ActivityFormProps = {
   engagementId: string;
   initial?: ProgramEvent;
+  employeeId?: string;
   onClose: () => void;
 };
 
 export function ActivityForm({
   engagementId,
   initial,
+  employeeId,
   onClose,
 }: ActivityFormProps) {
   const [pendingFiles, setPendingFiles] = useState<
@@ -73,14 +79,17 @@ export function ActivityForm({
           )
           .map((employee) => employee.id)
       : []);
-
+  const isEmployeeEdit = !!initial && !!employeeId;
   const [assignmentMode, setAssignmentMode] = useState<AssignmentMode>(
-    initial?.assignmentMode ??
-      (initialEmployeeIds.length > 1 ? "multiple" : "single"),
+    isEmployeeEdit
+      ? "single"
+      : (initial?.assignmentMode ??
+          (initialEmployeeIds.length > 1 ? "multiple" : "single")),
   );
 
-  const [selectedEmployeeIds, setSelectedEmployeeIds] =
-    useState<string[]>(initialEmployeeIds);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(
+    isEmployeeEdit ? [employeeId!] : initialEmployeeIds,
+  );
 
   const [employeePopoverOpen, setEmployeePopoverOpen] = useState(false);
   const [error, setError] = useState("");
@@ -159,6 +168,12 @@ export function ActivityForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
+
+    if (initial && (!employeeId || !initialEmployeeIds.includes(employeeId))) {
+      setError("Open the editor using the pencil beside an employee.");
+      return;
+    }
     setError("");
 
     if (!engagement) {
@@ -220,6 +235,8 @@ export function ActivityForm({
     }
 
     const activity: ProgramEvent = {
+      ...initial,
+      id: initial?.id || uid(),
       id: initial?.id || uid(),
       engagementId,
       type: "Activity",
@@ -239,7 +256,9 @@ export function ActivityForm({
       assignmentMode,
       assignedEmployeeIds: employeeIds,
       additionalDetails:
-        assignmentMode === "single" ? form.additionalDetails.trim() : "",
+        initial || assignmentMode === "single"
+          ? form.additionalDetails.trim()
+          : "",
 
       // Assignment does not mark an employee as attended.
       attendees: (initial?.attendees || []).filter((id) =>
@@ -257,6 +276,7 @@ export function ActivityForm({
         })),
       ],
     };
+    const splitId = uid();
 
     setSaving(true);
 
@@ -264,14 +284,25 @@ export function ActivityForm({
       // Save file contents before adding their references to the activity.
       await saveDocumentFiles(pendingFiles);
 
-      setData((previous) => ({
-        ...previous,
-        events: initial
-          ? previous.events.map((item) =>
-              item.id === initial.id ? activity : item,
-            )
-          : [...previous.events, activity],
-      }));
+      setData((previous) => {
+        if (initial && employeeId) {
+          return {
+            ...previous,
+            ...saveEmployeeActivity(
+              previous,
+              initial.id,
+              employeeId,
+              activity,
+              splitId,
+            ),
+          };
+        }
+
+        return {
+          ...previous,
+          events: [...previous.events, activity],
+        };
+      });
 
       toast.success(initial ? "Activity updated" : "Activity saved");
       onClose();
@@ -307,37 +338,39 @@ export function ActivityForm({
 
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
-            <fieldset className="activity-assignment-mode activity-full-width">
-              <legend>Assign to</legend>
+            {!initial && (
+              <fieldset className="activity-assignment-mode activity-full-width">
+                <legend>Assign to</legend>
 
-              <div className="activity-mode-options">
-                <label
-                  className={assignmentMode === "single" ? "selected" : ""}
-                >
-                  <input
-                    type="radio"
-                    name="activityAssignmentMode"
-                    value="single"
-                    checked={assignmentMode === "single"}
-                    onChange={() => changeAssignmentMode("single")}
-                  />
-                  <span>Individual employee</span>
-                </label>
+                <div className="activity-mode-options">
+                  <label
+                    className={assignmentMode === "single" ? "selected" : ""}
+                  >
+                    <input
+                      type="radio"
+                      name="activityAssignmentMode"
+                      value="single"
+                      checked={assignmentMode === "single"}
+                      onChange={() => changeAssignmentMode("single")}
+                    />
+                    <span>Individual employee</span>
+                  </label>
 
-                <label
-                  className={assignmentMode === "multiple" ? "selected" : ""}
-                >
-                  <input
-                    type="radio"
-                    name="activityAssignmentMode"
-                    value="multiple"
-                    checked={assignmentMode === "multiple"}
-                    onChange={() => changeAssignmentMode("multiple")}
-                  />
-                  <span>Multiple employees</span>
-                </label>
-              </div>
-            </fieldset>
+                  <label
+                    className={assignmentMode === "multiple" ? "selected" : ""}
+                  >
+                    <input
+                      type="radio"
+                      name="activityAssignmentMode"
+                      value="multiple"
+                      checked={assignmentMode === "multiple"}
+                      onChange={() => changeAssignmentMode("multiple")}
+                    />
+                    <span>Multiple employees</span>
+                  </label>
+                </div>
+              </fieldset>
+            )}
             <div className="activity-field activity-half-field activLabel">
               <span>Activity</span>
 
@@ -354,107 +387,127 @@ export function ActivityForm({
                 {assignmentMode === "single" ? "Employee" : "Employees"}
               </span>
 
-              <Popover
-                open={employeePopoverOpen}
-                onOpenChange={setEmployeePopoverOpen}
-              >
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="activity-employee-trigger"
-                    aria-labelledby="activity-employees-label activity-employees-value"
-                  >
-                    <Users size={17} />
-
-                    <span id="activity-employees-value">{employeeLabel}</span>
-
-                    <ChevronDown size={16} />
-                  </button>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  align="start"
-                  sideOffset={6}
-                  className="activity-employee-popover"
+              {initial ? (
+                <input
+                  aria-label="Employee"
+                  readOnly
+                  value={selectedEmployee?.name || "Employee unavailable"}
+                  style={{
+                    width: "100%",
+                    minHeight: 50,
+                    background: "#f3f6f2",
+                  }}
+                />
+              ) : (
+                <Popover
+                  open={employeePopoverOpen}
+                  onOpenChange={setEmployeePopoverOpen}
                 >
-                  {assignmentMode === "multiple" && (
-                    <label className="activity-person-row activity-select-all">
-                      <Checkbox
-                        checked={
-                          allSelected
-                            ? true
-                            : someSelected
-                              ? "indeterminate"
-                              : false
-                        }
-                        disabled={availableEmployees.length === 0}
-                        onCheckedChange={(checked) =>
-                          setSelectedEmployeeIds(
-                            checked === true
-                              ? availableEmployees.map(
-                                  (employee) => employee.id,
-                                )
-                              : [],
-                          )
-                        }
-                      />
-
-                      <strong>Select all employees</strong>
-                    </label>
-                  )}
-
-                  <div className="activity-employee-options">
-                    {availableEmployees.map((employee) => (
-                      <label key={employee.id} className="activity-person-row">
-                        {assignmentMode === "single" ? (
-                          <input
-                            type="radio"
-                            name="activityEmployee"
-                            checked={selectedEmployeeIds.includes(employee.id)}
-                            onChange={() => {
-                              setSelectedEmployeeIds([employee.id]);
-                              setEmployeePopoverOpen(false);
-                            }}
-                          />
-                        ) : (
-                          <Checkbox
-                            checked={selectedEmployeeIds.includes(employee.id)}
-                            onCheckedChange={(checked) =>
-                              toggleEmployee(employee.id, checked === true)
-                            }
-                          />
-                        )}
-
-                        <span>
-                          <strong>{employee.name}</strong>
-                          <small>{employee.department}</small>
-                        </span>
-                      </label>
-                    ))}
-
-                    {availableEmployees.length === 0 && (
-                      <p className="activity-picker-empty">
-                        Add active employees to this corporate client first.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="activity-picker-footer">
-                    <span>{selectedEmployeeIds.length} selected</span>
-
+                  <PopoverTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => setSelectedEmployeeIds([])}
-                      disabled={selectedEmployeeIds.length === 0}
+                      className="activity-employee-trigger"
+                      aria-labelledby="activity-employees-label activity-employees-value"
                     >
-                      Clear
+                      <Users size={17} />
+
+                      <span id="activity-employees-value">{employeeLabel}</span>
+
+                      <ChevronDown size={16} />
                     </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    align="start"
+                    sideOffset={6}
+                    className="activity-employee-popover"
+                  >
+                    {assignmentMode === "multiple" && (
+                      <label className="activity-person-row activity-select-all">
+                        <Checkbox
+                          checked={
+                            allSelected
+                              ? true
+                              : someSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          disabled={availableEmployees.length === 0}
+                          onCheckedChange={(checked) =>
+                            setSelectedEmployeeIds(
+                              checked === true
+                                ? availableEmployees.map(
+                                    (employee) => employee.id,
+                                  )
+                                : [],
+                            )
+                          }
+                        />
+
+                        <strong>Select all employees</strong>
+                      </label>
+                    )}
+
+                    <div className="activity-employee-options">
+                      {availableEmployees.map((employee) => (
+                        <label
+                          key={employee.id}
+                          className="activity-person-row"
+                        >
+                          {assignmentMode === "single" ? (
+                            <input
+                              type="radio"
+                              name="activityEmployee"
+                              checked={selectedEmployeeIds.includes(
+                                employee.id,
+                              )}
+                              onChange={() => {
+                                setSelectedEmployeeIds([employee.id]);
+                                setEmployeePopoverOpen(false);
+                              }}
+                            />
+                          ) : (
+                            <Checkbox
+                              checked={selectedEmployeeIds.includes(
+                                employee.id,
+                              )}
+                              onCheckedChange={(checked) =>
+                                toggleEmployee(employee.id, checked === true)
+                              }
+                            />
+                          )}
+
+                          <span>
+                            <strong>{employee.name}</strong>
+                            <small>{employee.department}</small>
+                          </span>
+                        </label>
+                      ))}
+
+                      {availableEmployees.length === 0 && (
+                        <p className="activity-picker-empty">
+                          Add active employees to this corporate client first.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="activity-picker-footer">
+                      <span>{selectedEmployeeIds.length} selected</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEmployeeIds([])}
+                        disabled={selectedEmployeeIds.length === 0}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
 
-            {assignmentMode === "single" && (
+            {(!!initial || assignmentMode === "single") && (
               <label className="activity-full-width">
                 <span>Additional details</span>
                 <textarea
@@ -541,7 +594,9 @@ export function ActivityForm({
               />
             </label>
             <div className="activity-full-width activity-document-field">
-              <label htmlFor="activity-documents"><span>Documents</span></label>
+              <label htmlFor="activity-documents">
+                <span>Documents</span>
+              </label>
 
               <input
                 id="activity-documents"

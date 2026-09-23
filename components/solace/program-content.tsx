@@ -391,7 +391,9 @@ export function EventsPanel({
   engagementId: string;
   mode?: "all" | "activities" | "sessions" | "calendar";
 }) {
-  const [activityForm, setActivityForm] = useState<Event | null | undefined>();
+  const [activityForm, setActivityForm] = useState<
+    { activity: Event; employeeId: string } | null | undefined
+  >();
   const { data, setData } = useSolace();
   const [edit, setEdit] = useState<Event | null | undefined>();
   const [details, setDetails] = useState<string | null>(null);
@@ -462,7 +464,9 @@ export function EventsPanel({
         <ActivityEmployeeTable
           events={events}
           onView={setDetails}
-          onEdit={(activity) => setActivityForm(activity)}
+          onEdit={(activity, employeeId) =>
+            setActivityForm({ activity, employeeId })
+          }
         />
       )}
       <div className="event-list">
@@ -557,9 +561,14 @@ export function EventsPanel({
       )}
       {activityForm !== undefined && (
         <ActivityForm
-          key={activityForm?.id || `new-activity-${engagementId}`}
+          key={
+            activityForm
+              ? `${activityForm.activity.id}-${activityForm.employeeId}`
+              : `new-activity-${engagementId}`
+          }
           engagementId={engagementId}
-          initial={activityForm || undefined}
+          initial={activityForm?.activity}
+          employeeId={activityForm?.employeeId}
           onClose={() => setActivityForm(undefined)}
         />
       )}

@@ -6,27 +6,15 @@ import { Pencil, Users } from "lucide-react";
 import { useSolace } from "@/lib/solace/store";
 import { fmt, type Event as ProgramEvent } from "@/lib/solace/data";
 
-import {
-  Avatar,
-  Badge,
-  Cell,
-  DataTable,
-  Empty,
-  Row,
-  SearchBox,
-} from "./ui";
+import { Avatar, Badge, Cell, DataTable, Empty, Row, SearchBox } from "./ui";
 
 type Props = {
   events: ProgramEvent[];
   onView: (activityId: string) => void;
-  onEdit: (activity: ProgramEvent) => void;
+  onEdit: (activity: ProgramEvent, employeeId: string) => void;
 };
 
-export function ActivityEmployeeTable({
-  events,
-  onView,
-  onEdit,
-}: Props) {
+export function ActivityEmployeeTable({ events, onView, onEdit }: Props) {
   const { data } = useSolace();
   const [query, setQuery] = useState("");
 
@@ -34,7 +22,7 @@ export function ActivityEmployeeTable({
     .filter((activity) => activity.type === "Activity")
     .flatMap((activity) => {
       const engagement = data.engagements.find(
-        (item) => item.id === activity.engagementId
+        (item) => item.id === activity.engagementId,
       );
 
       const assignedIds =
@@ -47,7 +35,7 @@ export function ActivityEmployeeTable({
                   employee.engagementId === activity.engagementId &&
                   employee.status === "Active" &&
                   (activity.audience === "All employees" ||
-                    employee.department === activity.audience)
+                    employee.department === activity.audience),
               )
               .map((employee) => employee.id);
 
@@ -70,7 +58,7 @@ export function ActivityEmployeeTable({
         employee: data.employees.find(
           (employee) =>
             employee.id === employeeId &&
-            employee.clientId === engagement?.clientId
+            employee.clientId === engagement?.clientId,
         ),
       }));
     });
@@ -88,7 +76,7 @@ export function ActivityEmployeeTable({
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
-      .includes(search)
+      .includes(search),
   );
 
   return (
@@ -114,97 +102,94 @@ export function ActivityEmployeeTable({
           "Actions",
         ]}
       >
-        {filteredRows.map(
-          ({ key, activity, employeeId, employee }) => (
-            <Row key={key}>
-              <Cell>
-                {employee ? (
-                  <div className="cell-title">
-                    <Avatar name={employee.name} small />
+        {filteredRows.map(({ key, activity, employeeId, employee }) => (
+          <Row key={key}>
+            <Cell>
+              {employee ? (
+                <div className="cell-title">
+                  <Avatar name={employee.name} small />
 
-                    <div>
-                      <strong>{employee.name}</strong>
-                      <small>{employee.email}</small>
-                      <small>{employee.department}</small>
-                    </div>
-                  </div>
-                ) : (
                   <div>
-                    <strong>
-                      {employeeId
-                        ? "Employee unavailable"
-                        : "No employees assigned"}
-                    </strong>
-                    <small>Edit activity to update assignments</small>
+                    <strong>{employee.name}</strong>
+                    <small>{employee.email}</small>
+                    <small>{employee.department}</small>
                   </div>
-                )}
-              </Cell>
-
-              <Cell>
-                <strong>{activity.name}</strong>
-                <small>{activity.duration} minutes</small>
-                <small>{activity.location}</small>
-              </Cell>
-
-              <Cell>
-                {fmt(activity.date)}
-                <small>{activity.time}</small>
-              </Cell>
-
-              <Cell>{activity.facilitator}</Cell>
-
-              <Cell>
-                <div className="activity-details-cell">
-                  {activity.assignmentMode === "single"
-                    ? activity.additionalDetails || "—"
-                    : "—"}
                 </div>
-              </Cell>
-
-              <Cell>
-                {employeeId ? (
-                  <Badge
-                    tone={
-                      activity.attendees.includes(employeeId)
-                        ? "green"
-                        : "neutral"
-                    }
-                  >
-                    {activity.attendees.includes(employeeId)
-                      ? "Attended"
-                      : "Not recorded"}
-                  </Badge>
-                ) : (
-                  "—"
-                )}
-              </Cell>
-
-              <Cell>
-                <div className="row-actions">
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Manage attendance for ${activity.name}`}
-                    title="Manage activity attendance"
-                    onClick={() => onView(activity.id)}
-                  >
-                    <Users size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Edit shared activity ${activity.name}`}
-                    title="Edit activity for all assigned employees"
-                    onClick={() => onEdit(activity)}
-                  >
-                    <Pencil size={16} />
-                  </button>
+              ) : (
+                <div>
+                  <strong>
+                    {employeeId
+                      ? "Employee unavailable"
+                      : "No employees assigned"}
+                  </strong>
+                  <small>Edit activity to update assignments</small>
                 </div>
-              </Cell>
-            </Row>
-          )
-        )}
+              )}
+            </Cell>
+
+            <Cell>
+              <strong>{activity.name}</strong>
+              <small>{activity.duration} minutes</small>
+              <small>{activity.location}</small>
+            </Cell>
+
+            <Cell>
+              {fmt(activity.date)}
+              <small>{activity.time}</small>
+            </Cell>
+
+            <Cell>{activity.facilitator}</Cell>
+
+            <Cell>
+              <div className="activity-details-cell">
+                {activity.additionalDetails || "—"}
+              </div>
+            </Cell>
+
+            <Cell>
+              {employeeId ? (
+                <Badge
+                  tone={
+                    activity.attendees.includes(employeeId)
+                      ? "green"
+                      : "neutral"
+                  }
+                >
+                  {activity.attendees.includes(employeeId)
+                    ? "Attended"
+                    : "Not recorded"}
+                </Badge>
+              ) : (
+                "—"
+              )}
+            </Cell>
+
+            <Cell>
+              <div className="row-actions">
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label={`Manage attendance for ${activity.name}`}
+                  title="Manage activity attendance"
+                  onClick={() => onView(activity.id)}
+                >
+                  <Users size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  className="icon-button"
+                  disabled={!employee || !employeeId}
+                  aria-label={`Edit ${activity.name} for ${employee?.name || "employee"}`}
+                  title={`Edit only ${employee?.name || "this employee"}'s activity`}
+                  onClick={() => onEdit(activity, employeeId)}
+                >
+                  <Pencil size={16} />
+                </button>
+              </div>
+            </Cell>
+          </Row>
+        ))}
       </DataTable>
 
       {filteredRows.length === 0 && (
