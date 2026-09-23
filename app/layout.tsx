@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./workspace.css";
 import { SolaceProvider } from "@/lib/solace/store";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.className} antialiased`}>
+      <body className={`${GeistSans.className} ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <SolaceProvider>{children}</SolaceProvider>
       </body>
     </html>

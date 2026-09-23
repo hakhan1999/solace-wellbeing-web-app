@@ -98,6 +98,14 @@ export interface Resource {
   fileName?: string;
 }
 
+export interface GeneralDocument {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+}
+
 export interface ActivityAssessment {
   id: string;
   activityId: string;
@@ -125,6 +133,7 @@ export interface Store {
   events: Event[];
   resources: Resource[];
   activityAssessments?: ActivityAssessment[];
+  generalDocuments?: GeneralDocument[];
 }
 export const templates = [
   {

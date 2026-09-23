@@ -50,7 +50,7 @@ import { useSolace } from "@/lib/solace/store";
 import { seed } from "@/lib/solace/data";
 import { WebMCP } from "./webmcp";
 import { Pick, Avatar, Action } from "./ui";
-import { ClipboardCheck, CalendarDays } from "lucide-react";
+import { ClipboardCheck, CalendarDays, FolderOpen } from "lucide-react";
 const nav = [
   ["/", "Overview", LayoutDashboard],
   ["/clients", "Corporate clients", Building2],
@@ -60,6 +60,7 @@ const nav = [
   //   ["/programs", "Programs", Layers3],
   ["/calendar", "Calendar", CalendarDays],
   ["/reports", "Reports & insights", ChartNoAxesCombined],
+  ["/documents", "Documents", FolderOpen],
 ] as const;
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -69,7 +70,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [reset, setReset] = useState(false);
   return (
     <SidebarProvider
-      style={{ "--sidebar-width": "242px" } as React.CSSProperties}
+      style={{ "--sidebar-width": "252px" } as React.CSSProperties}
     >
       <Sidebar className="app-sidebar">
         <SidebarHeader>
@@ -81,7 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <div className="workspace-label">CONSULTANT WORKSPACE</div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="sidebar-scroll">
           <SidebarMenu>
             {nav.map(([href, label, Icon]) => (
               <SidebarMenuItem key={href}>

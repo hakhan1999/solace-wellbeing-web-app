@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
 @utility scrollbar-thin {
   scrollbar-width: thin;
@@ -272,6 +271,7 @@ small {
 }
 .app-sidebar [data-slot="sidebar-content"] {
   gap: 20px;
+  padding-right: 10px;
 }
 .app-sidebar [data-slot="sidebar-menu"] {
   gap: 8px;
@@ -384,8 +384,8 @@ small {
   color: #835e3b;
 }
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 1.7px;
+  font-size: 13px !important;
+  letter-spacing: 0 !important;
   font-weight: 600;
   color: #7e9288;
   line-height: 1.4;
@@ -1099,7 +1099,7 @@ textarea {
   color: #304731;
   min-height: 40px;
   padding: 9px 12px;
-  font-size: 14px;
+  font-size: 13px;
   width: 100%;
 }
 input[type="color"] {
@@ -1434,7 +1434,7 @@ textarea {
   padding: 10px 2px !important;
   flex: none !important;
   border-radius: 0 !important;
-  font-size: 12px;
+  font-size: 15px;
   color: #8c987e;
   border: 0 !important;
   box-shadow: none !important;
@@ -3787,6 +3787,7 @@ textarea {
   border-radius: 8px;
   background: #f7faf6;
   font: inherit;
+  font-size: 13px;
 }
 
 .activity-document-field input[type="file"]::file-selector-button {
@@ -3885,5 +3886,178 @@ textarea {
 }
 
 .assessment-form-field span {
-    font-size: 13px;
+  font-size: 13px;
+}
+
+.general-document-upload {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 28px;
+  border: 1px solid #cbded3;
+  border-radius: 16px;
+  background: #eaf3ed;
+}
+
+.general-document-upload-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.general-document-upload-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: #d4e8dc;
+  color: #24634e;
+}
+
+.general-document-upload h2 {
+  margin: 0 0 8px;
+  color: #244b3d;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.general-document-upload p {
+  margin: 0;
+  color: #526d60;
+  font-size: 14px;
+}
+
+.general-document-total {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #dcebe1;
+  color: #345d48;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.general-document-upload > .button {
+  flex-shrink: 0;
+}
+
+.general-document-panel {
+  overflow: hidden;
+  border: 1px solid #dce5df;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.general-document-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f6f8f5;
+  border-bottom: 1px solid #e3e9df;
+}
+
+.general-document-toolbar .search-field {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+}
+
+.general-document-toolbar > span {
+  color: #617568;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.general-document-file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #edf0fa;
+  color: #626d9e;
+}
+
+.general-document-name {
+  max-width: 440px;
+  color: #304c3e;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .general-document-upload,
+  .general-document-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .general-document-upload {
+    padding: 20px;
+  }
+
+  .general-document-upload-content {
+    align-items: flex-start;
+  }
+
+  .general-document-upload-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+}
+
+.sidebar-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #648c7b transparent;
+}
+
+/* Chrome, Edge and Safari */
+@supports selector(::-webkit-scrollbar) {
+  .sidebar-scroll {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #648c7b;
+    border-radius: 999px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: #a4bea6;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+.form-grid legend, .form-grid span{
+  font-size: 13px;
 }

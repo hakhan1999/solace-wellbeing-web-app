@@ -456,7 +456,7 @@ export function ActivityForm({
 
             {assignmentMode === "single" && (
               <label className="activity-full-width">
-                Additional details
+                <span>Additional details</span>
                 <textarea
                   rows={3}
                   value={form.additionalDetails}
@@ -469,7 +469,7 @@ export function ActivityForm({
             )}
 
             <label>
-              Date
+              <span>Date</span>
               <input
                 type="date"
                 required
@@ -481,7 +481,7 @@ export function ActivityForm({
             </label>
 
             <label>
-              Start time
+              <span>Start time</span>
               <input
                 type="time"
                 required
@@ -491,7 +491,7 @@ export function ActivityForm({
             </label>
 
             <label>
-              Duration (minutes)
+              <span>Duration (minutes)</span>
               <input
                 type="number"
                 required
@@ -505,7 +505,7 @@ export function ActivityForm({
             </label>
 
             <label>
-              Capacity
+              <span>Capacity</span>
               <input
                 type="number"
                 required
@@ -519,7 +519,7 @@ export function ActivityForm({
             </label>
 
             <label>
-              Facilitator
+              <span>Facilitator</span>
               <input
                 required
                 value={form.facilitator}
@@ -530,7 +530,7 @@ export function ActivityForm({
             </label>
 
             <label>
-              Location or meeting link
+              <span>Location or meeting link</span>
               <input
                 required
                 value={form.location}
@@ -541,7 +541,7 @@ export function ActivityForm({
               />
             </label>
             <div className="activity-full-width activity-document-field">
-              <label htmlFor="activity-documents">Documents</label>
+              <label htmlFor="activity-documents"><span>Documents</span></label>
 
               <input
                 id="activity-documents"
