@@ -4061,3 +4061,281 @@ textarea {
 .form-grid span {
   font-size: 13px;
 }
+
+.solace-login {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: #f3f6f2;
+}
+
+.solace-login-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(32px, 5vw, 80px);
+  background: #153f34;
+  color: #fff;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #dcecc5;
+}
+
+.login-brand span {
+  color: #fff;
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+
+.login-intro-copy {
+  max-width: 480px;
+}
+
+.login-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.login-intro-copy .login-eyebrow {
+  color: #c4d9b1;
+}
+
+.login-intro-copy h1 {
+  margin: 20px 0;
+  color: #fff;
+  font-size: clamp(36px, 4vw, 60px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -1.5px;
+}
+
+.login-intro-copy p {
+  color: #c5d8cf;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.login-intro-footer {
+  color: #bdd1c5;
+  font-size: 13px;
+}
+
+.solace-login-form-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.solace-login-card {
+  width: 100%;
+  max-width: 450px;
+}
+
+.solace-login-card > .login-eyebrow {
+  color: #5d795f;
+}
+
+.solace-login-card h2 {
+  margin: 12px 0;
+  color: #233e33;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+
+.login-description {
+  margin: 0 0 28px;
+  color: #63756b;
+  font-size: 14px;
+}
+
+.login-role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+
+.login-role-options legend {
+  margin-bottom: 10px;
+  color: #344e40;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login-role-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #dce5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #52695b;
+  cursor: pointer;
+}
+
+.login-role-option.selected {
+  border-color: #38745c;
+  background: #e8f0e4;
+  color: #214f3b;
+}
+
+.login-role-option input[type="radio"] {
+  appearance: auto;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: #276653;
+}
+
+.login-role-option > svg {
+  flex-shrink: 0;
+}
+
+.login-role-option > span {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-role-option small {
+  font-size: 10px;
+  color: #65736b;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: #344e40;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-field input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid #d9e2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #263e32;
+  font: inherit;
+}
+
+.login-field input:focus {
+  border-color: #38745c;
+  outline: 3px solid #e0ecdf;
+}
+
+.login-field input:disabled {
+  background: #eaece7;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-submit {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: #24634e;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: #194d3c;
+}
+
+.login-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-submit:focus-visible,
+.login-role-option:focus-within {
+  outline: 2px solid #38745c;
+  outline-offset: 3px;
+}
+
+.login-error,
+.login-role-message {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.login-error {
+  color: #b42318;
+}
+
+.login-role-message {
+  color: #657348;
+}
+
+.login-demo-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #dce5db;
+  border-radius: 8px;
+  background: #eaf0e6;
+  color: #4c6655;
+  font-size: 12px;
+}
+
+.login-demo-credentials strong {
+  margin-bottom: 3px;
+}
+
+.login-loading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  background: #f3f6f2;
+  color: #24634e;
+}
+
+@media (max-width: 850px) {
+  .solace-login {
+    grid-template-columns: 1fr;
+  }
+
+  .solace-login-intro {
+    padding: 24px;
+  }
+
+  .login-intro-copy,
+  .login-intro-footer {
+    display: none;
+  }
+
+  .login-brand span {
+    font-size: 32px;
+  }
+}
+
+.login-field button {
+  width: 100%;
+}

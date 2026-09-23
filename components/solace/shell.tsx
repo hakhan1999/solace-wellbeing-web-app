@@ -1,7 +1,7 @@
 "use client";
-import { useState, ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "./navigation";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Leaf,
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Activity,
+  LogOut,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -64,6 +65,39 @@ const nav = [
   ["/documents", "Documents", FolderOpen],
 ] as const;
 export function Shell({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    let hasSession = false;
+
+    try {
+      hasSession = sessionStorage.getItem("solace-demo-auth") === "admin";
+    } catch {
+      hasSession = false;
+    }
+
+    if (!hasSession) {
+      router.replace("/login");
+      return;
+    }
+
+    setAuthenticated(true);
+  }, [router]);
+
+  if (!authenticated) {
+    return (
+      <div className="login-loading" role="status">
+        Opening your workspace…
+      </div>
+    );
+  }
+
+  return <AuthenticatedShell>{children}</AuthenticatedShell>;
+}
+
+export function AuthenticatedShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const path = pathname?.replace(/\/+$/, "") || "/";
   const { data, clientId, setClientId, setData } = useSolace();
@@ -153,6 +187,15 @@ export function Shell({ children }: { children: ReactNode }) {
               <DropdownMenuItem onClick={() => setReset(true)}>
                 <RotateCcw size={15} />
                 Reset demo data
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  sessionStorage.removeItem("solace-demo-auth");
+                  router.replace("/login");
+                }}
+              >
+                <LogOut size={15} />
+                Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
