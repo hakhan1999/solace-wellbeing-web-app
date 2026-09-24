@@ -106,14 +106,34 @@ export interface GeneralDocument {
   uploadedAt: string;
 }
 
+export const assessmentTypes = [
+  "Physical",
+  "Mental wellbeing",
+  "Emotional wellbeing",
+  "Medical/blood test",
+  "Other",
+] as const;
+
 export interface ActivityAssessment {
   id: string;
-  activityId: string;
+
+  // Retained for older saved assessments.
+  activityId?: string;
+
   engagementId: string;
   clientId: string;
   employeeId: string;
   additionalDetails: string;
   createdAt: string;
+
+  // Optional so existing browser data remains compatible.
+  category?: string;
+  date?: string;
+  time?: string;
+  duration?: number;
+  facilitator?: string;
+  location?: string;
+  documents?: ActivityDocument[];
 }
 
 export interface ActivityDocument {

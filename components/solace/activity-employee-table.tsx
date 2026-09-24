@@ -129,6 +129,11 @@ export function ActivityEmployeeTable({ events, onView, onEdit }: Props) {
 
             <Cell>
               <strong>{activity.name}</strong>
+              <small>
+                {data.engagements.find(
+                  (item) => item.id === activity.engagementId,
+                )?.name || "Engagement unavailable"}
+              </small>
               <small>{activity.duration} minutes</small>
               <small>{activity.location}</small>
             </Cell>

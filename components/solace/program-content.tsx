@@ -387,79 +387,92 @@ export function ResultDialog({
 export function EventsPanel({
   engagementId,
   mode = "all",
+  hideHeader = false,
 }: {
-  engagementId: string;
+  engagementId?: string;
   mode?: "all" | "activities" | "sessions" | "calendar";
+  hideHeader?: boolean;
 }) {
   const [activityForm, setActivityForm] = useState<
     { activity: Event; employeeId: string } | null | undefined
   >();
-  const { data, setData } = useSolace();
+  const { data, setData, clientId } = useSolace();
   const [edit, setEdit] = useState<Event | null | undefined>();
   const [details, setDetails] = useState<string | null>(null);
   const [remove, setRemove] = useState<Event | null>(null);
   const [filter, setFilter] = useState("All types");
   const events = data.events
-    .filter(
-      (v) =>
-        v.engagementId === engagementId &&
-        (mode !== "activities" || v.type === "Activity") &&
-        (mode !== "sessions" || v.type !== "Activity") &&
-        (filter === "All types" || v.type === filter),
-    )
+    .filter((event) => {
+      const parent = data.engagements.find(
+        (item) => item.id === event.engagementId,
+      );
+
+      return (
+        !!parent &&
+        (!engagementId || event.engagementId === engagementId) &&
+        (clientId === "all" || parent.clientId === clientId) &&
+        (mode !== "activities" || event.type === "Activity") &&
+        (mode !== "sessions" || event.type !== "Activity") &&
+        (filter === "All types" || event.type === filter)
+      );
+    })
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const ev = data.events.find((v) => v.id === details);
   return (
     <>
-      <div className="section-head">
-        <div>
-          <h2>
-            {mode === "calendar"
-              ? "Your program, in rhythm"
-              : mode === "sessions"
-                ? "Space to connect"
-                : mode === "activities"
-                  ? "Activities"
-                  : "A little movement. A meaningful connection."}
-          </h2>
-          <p>
-            {mode === "activities"
-              ? "Create activities and manage employee assignments."
-              : mode === "calendar"
-                ? "An agenda of assessments, activities and sessions."
-                : "Plan experiences that bring the program into everyday life."}
-          </p>
-        </div>
-        <div className="row-actions">
-          {mode !== "sessions" && (
-            <Add onClick={() => setActivityForm(null)}>Add activity</Add>
-          )}
+      {!hideHeader && (
+        <div className="section-head">
+          <div>
+            <h2>
+              {mode === "calendar"
+                ? "Your program, in rhythm"
+                : mode === "sessions"
+                  ? "Space to connect"
+                  : mode === "activities"
+                    ? "Activities"
+                    : "A little movement. A meaningful connection."}
+            </h2>
+            <p>
+              {mode === "activities"
+                ? "Create activities and manage employee assignments."
+                : mode === "calendar"
+                  ? "An agenda of assessments, activities and sessions."
+                  : "Plan experiences that bring the program into everyday life."}
+            </p>
+          </div>
+          <div className="row-actions">
+            {mode !== "sessions" && (
+              <Add onClick={() => setActivityForm(null)}>Add activity</Add>
+            )}
 
-          {mode !== "activities" && (
-            <Action secondary onClick={() => setEdit(null)}>
-              Add session
-            </Action>
-          )}
+            {mode !== "activities" && (
+              <Action secondary onClick={() => setEdit(null)}>
+                Add session
+              </Action>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="toolbar compact">
-        {mode !== "activities" && (
-          <Pick
-            value={filter}
-            onChange={setFilter}
-            label="Event type"
-            options={["All types", "Activity", "Group session", "One-to-one"]}
-          />
-        )}
-        <span className="toolbar-count">
-          {events.length}{" "}
-          {mode === "activities"
-            ? events.length === 1
-              ? "activity"
-              : "activities"
-            : "scheduled experiences"}
-        </span>
-      </div>
+      )}
+      {!hideHeader && (
+        <div className="toolbar compact">
+          {mode !== "activities" && (
+            <Pick
+              value={filter}
+              onChange={setFilter}
+              label="Event type"
+              options={["All types", "Activity", "Group session", "One-to-one"]}
+            />
+          )}
+          <span className="toolbar-count">
+            {events.length}{" "}
+            {mode === "activities"
+              ? events.length === 1
+                ? "activity"
+                : "activities"
+              : "scheduled experiences"}
+          </span>
+        </div>
+    )}
       {mode !== "sessions" && (
         <ActivityEmployeeTable
           events={events}
@@ -566,7 +579,7 @@ export function EventsPanel({
               ? `${activityForm.activity.id}-${activityForm.employeeId}`
               : `new-activity-${engagementId}`
           }
-          engagementId={engagementId}
+          engagementId={activityForm?.activity.engagementId || engagementId}
           initial={activityForm?.activity}
           employeeId={activityForm?.employeeId}
           onClose={() => setActivityForm(undefined)}

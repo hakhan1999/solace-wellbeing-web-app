@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -11,12 +12,23 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { ProgramDocuments } from "./program-documents";
+
 import { useSolace } from "@/lib/solace/store";
 import {
+  assessmentTypes,
   uid,
   fmt,
   type ActivityAssessment,
 } from "@/lib/solace/data";
+
+import {
+  saveDocumentFiles,
+  getDocumentFile,
+  formatFileSize,
+} from "@/lib/solace/document-storage";
 
 import {
   Action,
@@ -33,377 +45,570 @@ import {
 
 export function Assessments() {
   const { data, clientId } = useSolace();
-
-  const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
+  const [form, setForm] = useState<ActivityAssessment | null | undefined>();
 
-  const assessments = (data.activityAssessments ?? [])
-    .filter(
-      (assessment) =>
-        clientId === "all" || assessment.clientId === clientId
-    )
+  const rows = (data.activityAssessments ?? [])
+    .filter((item) => clientId === "all" || item.clientId === clientId)
     .map((assessment) => ({
       assessment,
-      activity: data.events.find(
-        (item) => item.id === assessment.activityId
-      ),
       employee: data.employees.find(
         (item) =>
           item.id === assessment.employeeId &&
-          item.clientId === assessment.clientId
-      ),
-      client: data.clients.find(
-        (item) => item.id === assessment.clientId
+          item.clientId === assessment.clientId,
       ),
       engagement: data.engagements.find(
-        (item) => item.id === assessment.engagementId
+        (item) => item.id === assessment.engagementId,
+      ),
+      legacyActivity: data.events.find(
+        (item) => item.id === assessment.activityId,
       ),
     }))
-    .filter(({ assessment, activity, employee, client, engagement }) =>
+    .filter(({ assessment, employee, engagement, legacyActivity }) =>
       [
-        activity?.name,
+        assessment.category,
+        assessment.additionalDetails,
+        assessment.facilitator,
         employee?.name,
         employee?.email,
-        client?.name,
         engagement?.name,
-        assessment.additionalDetails,
+        legacyActivity?.name,
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
-        .includes(query.trim().toLowerCase())
+        .includes(query.trim().toLowerCase()),
     )
     .sort((a, b) =>
-      b.assessment.createdAt.localeCompare(a.assessment.createdAt)
+      b.assessment.createdAt.localeCompare(a.assessment.createdAt),
     );
+
+  async function downloadDocument(
+    document: NonNullable<ActivityAssessment["documents"]>[number],
+  ) {
+    try {
+      const blob = await getDocumentFile(document.id);
+      const url = URL.createObjectURL(blob);
+      const link = documentOwnerLink(url, document.name);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      toast.error("This document is unavailable in this browser.");
+    }
+  }
 
   return (
     <>
       <Heading
-        eyebrow="EMPLOYEE WELLBEING"
+        eyebrow="ENGAGEMENT MANAGEMENT"
         title="Assessments"
-        description="Record an employee assessment against a scheduled activity."
-        action={
-          <Add onClick={() => setShowForm(true)}>
-            Add assessment
-          </Add>
-        }
+        description="Manage employee assessments and their documents."
+        action={<Add onClick={() => setForm(null)}>Add assessment</Add>}
       />
 
-      <div className="panel assessment-table-panel">
-        <div className="assessment-table-toolbar">
-          <SearchBox
-            value={query}
-            onChange={setQuery}
-            placeholder="Search employee, activity or assessment..."
-          />
+      <Tabs defaultValue="assessments" className="program-tabs">
+        <TabsList className="section-tabs">
+          <TabsTrigger value="assessments">Assessments</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+        </TabsList>
 
-          <span>
-            {assessments.length}{" "}
-            {assessments.length === 1 ? "assessment" : "assessments"}
-          </span>
-        </div>
+        <TabsContent value="assessments">
+          <div className="panel assessment-table-panel">
+            <div className="panel assessment-table-panel">
+              <div className="assessment-table-toolbar">
+                <SearchBox
+                  value={query}
+                  onChange={setQuery}
+                  placeholder="Search employee, engagement or assessment..."
+                />
+                <span>{rows.length} assessments</span>
+              </div>
 
-        <DataTable
-          headers={[
-            "Employee",
-            "Activity",
-            "Corporate client",
-            "Engagement",
-            "Additional details",
-            "Created",
-          ]}
-        >
-          {assessments.map(
-            ({ assessment, activity, employee, client, engagement }) => (
-              <Row key={assessment.id}>
-                <Cell>
-                  <div className="cell-title">
-                    <Avatar
-                      name={employee?.name || "Unknown employee"}
-                      small
-                    />
+              <DataTable
+                headers={[
+                  "Employee",
+                  "Engagement",
+                  "Assessment",
+                  "Date & time",
+                  "Facilitator",
+                  "Additional details",
+                  "Documents",
+                  "Actions",
+                ]}
+              >
+                {rows.map(
+                  ({ assessment, employee, engagement, legacyActivity }) => (
+                    <Row key={assessment.id}>
+                      <Cell>
+                        <div className="cell-title">
+                          <Avatar
+                            name={employee?.name || "Unknown employee"}
+                            small
+                          />
+                          <div>
+                            <strong>
+                              {employee?.name || "Employee unavailable"}
+                            </strong>
+                            <small>{employee?.email}</small>
+                            <small>{employee?.department}</small>
+                          </div>
+                        </div>
+                      </Cell>
 
-                    <div>
-                      <strong>
-                        {employee?.name || "Employee unavailable"}
-                      </strong>
+                      <Cell>
+                        {engagement?.name || "Engagement unavailable"}
+                      </Cell>
 
-                      {employee && (
-                        <>
-                          <small>{employee.email}</small>
-                          <small>{employee.department}</small>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Cell>
+                      <Cell>
+                        <strong>
+                          {assessment.category ||
+                            legacyActivity?.name ||
+                            "Legacy assessment"}
+                        </strong>
+                        {assessment.duration !== undefined && (
+                          <small>{assessment.duration} minutes</small>
+                        )}
+                        <small>{assessment.location}</small>
+                      </Cell>
 
-                <Cell>
-                  <strong>
-                    {activity?.name || "Activity unavailable"}
-                  </strong>
+                      <Cell>
+                        {assessment.date
+                          ? fmt(assessment.date)
+                          : "Not scheduled"}
+                        <small>{assessment.time || "—"}</small>
+                      </Cell>
 
-                  {activity && (
-                    <small>
-                      {fmt(activity.date)} · {activity.time}
-                    </small>
-                  )}
-                </Cell>
+                      <Cell>{assessment.facilitator || "—"}</Cell>
 
-                <Cell>{client?.name || "Client unavailable"}</Cell>
+                      <Cell>
+                        <div className="assessment-details-cell">
+                          {assessment.additionalDetails || "—"}
+                        </div>
+                      </Cell>
 
-                <Cell>
-                  {engagement?.name || "Engagement unavailable"}
-                </Cell>
+                      <Cell>
+                        {assessment.documents?.length ? (
+                          <div className="assessment-document-links">
+                            {assessment.documents.map((document) => (
+                              <button
+                                key={document.id}
+                                type="button"
+                                onClick={() => downloadDocument(document)}
+                              >
+                                {document.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </Cell>
 
-                <Cell>
-                  <div className="assessment-details-cell">
-                    {assessment.additionalDetails || "—"}
-                  </div>
-                </Cell>
+                      <Cell>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          aria-label={`Edit assessment for ${
+                            employee?.name || "employee"
+                          }`}
+                          onClick={() => setForm(assessment)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      </Cell>
+                    </Row>
+                  ),
+                )}
+              </DataTable>
 
-                <Cell>
-                  {new Date(assessment.createdAt).toLocaleDateString(
-                    "en-GB",
-                    {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    }
-                  )}
-                </Cell>
-              </Row>
-            )
-          )}
-        </DataTable>
+              {!rows.length && (
+                <Empty
+                  title="No assessments found"
+                  text="Add an assessment or adjust your search."
+                />
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
-        {assessments.length === 0 && (
-          <Empty
-            title={
-              query.trim()
-                ? "No matching assessments"
-                : "No assessments yet"
-            }
-            text={
-              query.trim()
-                ? "Try another employee or activity name."
-                : "Add an assessment to record details for an employee."
-            }
-          />
-        )}
-      </div>
+        <TabsContent value="documents">
+          <ProgramDocuments key={clientId} kind="assessments" />
+        </TabsContent>
+      </Tabs>
 
-      {showForm && (
+      {form !== undefined && (
         <AssessmentForm
-          key={clientId}
-          onClose={() => setShowForm(false)}
+          key={`${form?.id || "new"}-${clientId}`}
+          initial={form || undefined}
+          onClose={() => setForm(undefined)}
         />
       )}
     </>
   );
 }
 
-function AssessmentForm({ onClose }: { onClose: () => void }) {
+function documentOwnerLink(url: string, name: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  return link;
+}
+
+function AssessmentForm({
+  initial,
+  onClose,
+}: {
+  initial?: ActivityAssessment;
+  onClose: () => void;
+}) {
   const { data, setData, clientId } = useSolace();
-
-  const [activityId, setActivityId] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
-  const [additionalDetails, setAdditionalDetails] = useState("");
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<
+    { id: string; file: File }[]
+  >([]);
 
-  // Show actual created activities, scoped to the current client.
-  const activities = data.events
-    .filter((activity) => {
-      if (activity.type !== "Activity") return false;
+  const [form, setForm] = useState({
+    engagementId: initial?.engagementId || "",
+    employeeId: initial?.employeeId || "",
+    category: initial?.category || "",
+    date: initial?.date || "",
+    time: initial?.time || "09:00",
+    duration: String(initial?.duration ?? 45),
+    facilitator: initial?.facilitator || "",
+    location: initial?.location || "",
+    additionalDetails: initial?.additionalDetails || "",
+  });
 
-      const engagement = data.engagements.find(
-        (item) => item.id === activity.engagementId
-      );
-
-      return (
-        !!engagement &&
-        (clientId === "all" || engagement.clientId === clientId)
-      );
-    })
-    .sort((a, b) =>
-      (a.date + a.time).localeCompare(b.date + b.time)
-    );
-
-  const selectedActivity = activities.find(
-    (activity) => activity.id === activityId
+  const engagements = data.engagements.filter(
+    (item) =>
+      clientId === "all" ||
+      item.clientId === clientId ||
+      item.id === initial?.engagementId,
   );
 
-  const selectedEngagement = data.engagements.find(
-    (engagement) => engagement.id === selectedActivity?.engagementId
-  );
+  const engagement = engagements.find((item) => item.id === form.engagementId);
 
-  // Only employees belonging to the activity's company are selectable.
-  const employees = selectedEngagement
+  const employees = engagement
     ? data.employees
         .filter(
-          (employee) =>
-            employee.clientId === selectedEngagement.clientId &&
-            employee.status === "Active"
+          (item) =>
+            item.clientId === engagement.clientId &&
+            (item.status === "Active" || item.id === initial?.employeeId),
         )
         .sort((a, b) => a.name.localeCompare(b.name))
     : [];
 
-  const activityOptions = activities.map((activity) => {
-    const engagement = data.engagements.find(
-      (item) => item.id === activity.engagementId
-    );
+  function update(field: keyof typeof form, value: string) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+    setError("");
+  }
 
-    const client = data.clients.find(
-      (item) => item.id === engagement?.clientId
-    );
-
-    return {
-      value: activity.id,
-      label: [
-        activity.name,
-        engagement?.name,
-        clientId === "all" ? client?.name : undefined,
-        `${fmt(activity.date)} ${activity.time}`,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-    };
-  });
-
-  function handleSave(event: FormEvent<HTMLFormElement>) {
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
+
     setError("");
 
-    if (!selectedActivity || !selectedEngagement) {
-      setError("Please select an activity.");
+    if (!engagement) {
+      setError("Select an engagement.");
       return;
     }
 
-    const selectedEmployee = employees.find(
-      (employee) => employee.id === employeeId
-    );
+    if (!employees.some((item) => item.id === form.employeeId)) {
+      setError("Select one employee from this company.");
+      return;
+    }
 
-    if (!selectedEmployee) {
-      setError("Please select one employee.");
+    if (
+      !assessmentTypes.some((type) => type === form.category) ||
+      !form.date ||
+      !form.time ||
+      !form.facilitator.trim() ||
+      !form.location.trim()
+    ) {
+      setError("Complete all required assessment fields.");
+      return;
+    }
+
+    if (form.date < engagement.start || form.date > engagement.end) {
+      setError("Choose a date within the engagement period.");
+      return;
+    }
+
+    const duration = Number(form.duration);
+
+    if (!Number.isInteger(duration) || duration < 5) {
+      setError("Duration must be at least 5 minutes.");
       return;
     }
 
     const assessment: ActivityAssessment = {
-      id: uid(),
-      activityId: selectedActivity.id,
-      engagementId: selectedEngagement.id,
-      clientId: selectedEngagement.clientId,
-      employeeId: selectedEmployee.id,
-      additionalDetails: additionalDetails.trim(),
-      createdAt: new Date().toISOString(),
+      id: initial?.id || uid(),
+      engagementId: engagement.id,
+      clientId: engagement.clientId,
+      employeeId: form.employeeId,
+      category: form.category,
+      date: form.date,
+      time: form.time,
+      duration,
+      facilitator: form.facilitator.trim(),
+      location: form.location.trim(),
+      additionalDetails: form.additionalDetails.trim(),
+      createdAt: initial?.createdAt || new Date().toISOString(),
+      documents: [
+        ...(initial?.documents ?? []),
+        ...pendingFiles.map(({ id, file }) => ({
+          id,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date().toISOString(),
+        })),
+      ],
     };
 
-    setData((previous) => ({
-      ...previous,
-      activityAssessments: [
-        ...(previous.activityAssessments ?? []),
-        assessment,
-      ],
-    }));
+    setSaving(true);
 
-    toast.success("Assessment saved");
-    onClose();
+    try {
+      if (pendingFiles.length > 0) {
+        await saveDocumentFiles(pendingFiles);
+      }
+
+      setData((previous) => ({
+        ...previous,
+        activityAssessments: initial
+          ? (previous.activityAssessments ?? []).map((item) =>
+              item.id === initial.id ? assessment : item,
+            )
+          : [...(previous.activityAssessments ?? []), assessment],
+      }));
+
+      toast.success(initial ? "Assessment updated" : "Assessment saved");
+      onClose();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save assessment documents.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !saving) onClose();
+      }}
+    >
       <DialogContent className="form-dialog">
         <DialogHeader>
-          <DialogTitle>Add assessment</DialogTitle>
-
+          <DialogTitle>
+            {initial ? "Edit assessment" : "Add assessment"}
+          </DialogTitle>
           <DialogDescription>
-            Select an activity and one employee, then add assessment details.
+            Choose an engagement and schedule an assessment for one employee.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSave}>
-          <div className="assessment-form-fields">
-            <div className="assessment-form-field">
-              <span>Activity</span>
-
-              <Pick
-                label="Activity"
-                value={activityId}
-                options={activityOptions}
-                onChange={(value) => {
-                  setActivityId(value);
-                  setEmployeeId("");
-                  setError("");
-                }}
-              />
-
-              {activities.length === 0 && (
-                <small>
-                  Create an activity inside an engagement first.
-                </small>
-              )}
-            </div>
-
-            <div className="assessment-form-field">
-              <span>Employee</span>
-
-              {selectedEngagement && employees.length > 0 ? (
+        <form onSubmit={save}>
+          <fieldset disabled={saving} className="assessment-fields-reset">
+            <div className="assessment-edit-grid">
+              <label className="assessment-span-full">
+                <span>Engagement</span>
                 <Pick
-                  label="Select an employee"
-                  value={employeeId}
-                  options={employees.map((employee) => ({
-                    value: employee.id,
-                    label: `${employee.name} · ${employee.email}`,
+                  label="Select engagement"
+                  value={form.engagementId}
+                  options={engagements.map((item) => ({
+                    value: item.id,
+                    label: `${item.name} · ${
+                      data.clients.find((client) => client.id === item.clientId)
+                        ?.name || "Unknown company"
+                    }`,
                   }))}
                   onChange={(value) => {
-                    setEmployeeId(value);
+                    const selected = engagements.find(
+                      (item) => item.id === value,
+                    );
+
+                    setForm((previous) => ({
+                      ...previous,
+                      engagementId: value,
+                      employeeId: "",
+                      date: selected?.start || "",
+                      facilitator: selected?.consultant || "",
+                    }));
                     setError("");
                   }}
                 />
-              ) : (
-                <button
-                  type="button"
-                  className="assessment-disabled-select"
-                  disabled
-                >
-                  {selectedEngagement
-                    ? "No active employees in this company"
-                    : "Select an activity first"}
-                </button>
-              )}
+              </label>
+
+              <label>
+                <span>Assessment type</span>
+                <Pick
+                  label="Select assessment type"
+                  value={form.category}
+                  options={[...assessmentTypes]}
+                  onChange={(value) => update("category", value)}
+                />
+              </label>
+
+              <label>
+                <span>Employee</span>
+                {employees.length ? (
+                  <Pick
+                    label="Select one employee"
+                    value={form.employeeId}
+                    options={employees.map((item) => ({
+                      value: item.id,
+                      label: `${item.name} · ${item.email}`,
+                    }))}
+                    onChange={(value) => update("employeeId", value)}
+                  />
+                ) : (
+                  <input
+                    readOnly
+                    value={
+                      engagement
+                        ? "No active employees in this company"
+                        : "Select an engagement first"
+                    }
+                  />
+                )}
+              </label>
+
+              <label className="assessment-span-full">
+                <span>Additional details</span>
+                <textarea
+                  rows={4}
+                  value={form.additionalDetails}
+                  placeholder="Add notes, observations or instructions..."
+                  onChange={(event) =>
+                    update("additionalDetails", event.target.value)
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Date</span>
+                <input
+                  type="date"
+                  required
+                  min={engagement?.start}
+                  max={engagement?.end}
+                  value={form.date}
+                  onChange={(event) => update("date", event.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>Start time</span>
+                <input
+                  type="time"
+                  required
+                  value={form.time}
+                  onChange={(event) => update("time", event.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>Duration (minutes)</span>
+                <input
+                  type="number"
+                  min={5}
+                  step={1}
+                  required
+                  value={form.duration}
+                  onChange={(event) => update("duration", event.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>Facilitator</span>
+                <input
+                  required
+                  value={form.facilitator}
+                  onChange={(event) =>
+                    update("facilitator", event.target.value)
+                  }
+                />
+              </label>
+
+              <label className="assessment-span-full">
+                <span>Location or meeting link</span>
+                <input
+                  required
+                  value={form.location}
+                  onChange={(event) => update("location", event.target.value)}
+                />
+              </label>
+
+              <div className="assessment-span-full">
+                <label>
+                  <span>Documents</span>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files ?? []);
+
+                      setPendingFiles((previous) => [
+                        ...previous,
+                        ...files.map((file) => ({ id: uid(), file })),
+                      ]);
+
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {initial?.documents?.map((document) => (
+                  <p key={document.id}>
+                    {document.name} · {formatFileSize(document.size)}
+                  </p>
+                ))}
+
+                {pendingFiles.map(({ id, file }) => (
+                  <div key={id} className="assessment-upload-row">
+                    <span>
+                      {file.name} · {formatFileSize(file.size)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPendingFiles((previous) =>
+                          previous.filter((item) => item.id !== id),
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            <label className="assessment-form-field">
-             <span> Additional details</span>
-
-              <textarea
-                rows={4}
-                value={additionalDetails}
-                onChange={(event) =>
-                  setAdditionalDetails(event.target.value)
-                }
-                placeholder="Enter assessment notes, observations or feedback..."
-              />
-            </label>
-          </div>
+          </fieldset>
 
           {error && (
-            <p className="assessment-form-error" role="alert">
+            <p className="form-error" role="alert">
               {error}
             </p>
           )}
 
-          <div className="assessment-form-footer">
-            <Action secondary onClick={onClose}>
+          <div className="form-actions">
+            <Action secondary disabled={saving} onClick={onClose}>
               Close
             </Action>
-
             <Action
               type="submit"
-              disabled={!selectedActivity || employees.length === 0}
+              disabled={saving || !engagement || !employees.length}
             >
-              Save and close
+              {saving ? "Saving..." : "Save and close"}
             </Action>
           </div>
         </form>

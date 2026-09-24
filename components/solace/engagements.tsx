@@ -44,6 +44,7 @@ import { EditForm, Confirm } from "./forms";
 import { EventsPanel } from "./program-content";
 import { OutcomeChart } from "./charts";
 import { ActivityForm } from "./activity-form";
+import { EngagementDrawer } from "./engagement-drawer";
 
 import { EngagementDocuments } from "./engagement-documents";
 export function activationIssues(
@@ -74,6 +75,18 @@ export function Engagements() {
     string | null
   >(null);
   const { data, setData, clientId } = useSolace();
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  function openEngagementDrawer(id: string) {
+    setDrawerId(id);
+    setDrawerOpen(true);
+  }
+
+  const drawerEngagement = data.engagements.find(
+    (item) => item.id === drawerId,
+  );
   const router = useRouter();
   const params = useSearchParams();
   const [create, setCreate] = useState(Boolean(params.get("new")));
@@ -151,6 +164,11 @@ export function Engagements() {
             eyebrow={client?.name}
             title={engagement.name}
             description={engagement.objective}
+            action={
+              <Action secondary onClick={() => setDrawerId(engagement.id)}>
+                View / edit details
+              </Action>
+            }
           />
 
           <Tabs
@@ -238,10 +256,11 @@ export function Engagements() {
 
               const employeeCount = employeeIds.size;
               return (
-                <Link
-                  className="engagement-card"
+                <button
+                  type="button"
+                  className="engagement-card engagement-card-button"
                   key={e.id}
-                  href={"/engagements?id=" + e.id}
+                  onClick={() => openEngagementDrawer(e.id)}
                 >
                   <div className="client-top">
                     <Avatar name={c?.name || ""} color={c?.color} />
@@ -263,10 +282,10 @@ export function Engagements() {
                   </div>
                   {/* <Meter value={st.completion} /> */}
                   <div className="eng-card-foot">
-                    <span>Open engagement</span>
+                    <span>View details</span>
                     <ArrowRight size={17} />
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -318,6 +337,14 @@ export function Engagements() {
             }));
             toast.success("Engagement completed");
           }}
+        />
+      )}
+      {drawerEngagement && (
+        <EngagementDrawer
+          key={drawerEngagement.id}
+          engagement={drawerEngagement}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
         />
       )}
     </>

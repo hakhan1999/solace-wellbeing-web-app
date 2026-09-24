@@ -43,14 +43,14 @@ const activityCategories = [
 type AssignmentMode = "single" | "multiple";
 
 type ActivityFormProps = {
-  engagementId: string;
+  engagementId?: string;
   initial?: ProgramEvent;
   employeeId?: string;
   onClose: () => void;
 };
 
 export function ActivityForm({
-  engagementId,
+  engagementId: defaultEngagementId,
   initial,
   employeeId,
   onClose,
@@ -60,9 +60,20 @@ export function ActivityForm({
   >([]);
 
   const [saving, setSaving] = useState(false);
-  const { data, setData } = useSolace();
+  const { data, setData, clientId } = useSolace();
+
+  const [engagementId, setEngagementId] = useState(
+    initial?.engagementId || defaultEngagementId || "",
+  );
 
   const engagement = data.engagements.find((item) => item.id === engagementId);
+
+  const availableEngagements = data.engagements.filter(
+    (item) =>
+      clientId === "all" ||
+      item.clientId === clientId ||
+      item.id === engagementId,
+  );
 
   // Resolve older activities that used department/all-employee audiences.
   const initialEmployeeIds =
@@ -337,6 +348,49 @@ export function ActivityForm({
 
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
+            <div className="activity-field engField activity-full-width">
+              <span>Engagement</span>
+
+              {initial ? (
+                <input
+                  aria-label="Engagement"
+                  readOnly
+                  value={engagement?.name || "Engagement unavailable"}
+                />
+              ) : (
+                <Pick
+                  label="Select engagement"
+                  value={engagementId}
+                  options={availableEngagements.map((item) => ({
+                    value: item.id,
+                    label: `${item.name} · ${
+                      data.clients.find((client) => client.id === item.clientId)
+                        ?.name || "Unknown company"
+                    }`,
+                  }))}
+                  onChange={(value) => {
+                    const selected = availableEngagements.find(
+                      (item) => item.id === value,
+                    );
+
+                    setEngagementId(value);
+                    setSelectedEmployeeIds([]);
+                    setEmployeePopoverOpen(false);
+                    setError("");
+
+                    setForm((previous) => ({
+                      ...previous,
+                      date: selected?.start || "",
+                      facilitator: selected?.consultant || "",
+                    }));
+                  }}
+                />
+              )}
+
+              {!initial && availableEngagements.length === 0 && (
+                <small>Create an engagement first.</small>
+              )}
+            </div>
             {!initial && (
               <fieldset className="activity-assignment-mode activity-full-width">
                 <legend>Assign to</legend>

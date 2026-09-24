@@ -58,12 +58,20 @@ const nav = [
   ["/clients", "Corporate clients", Building2],
   ["/employees", "Employees", Users],
   ["/engagements", "Engagements", Route],
-  ["/assessments", "Assessments", ClipboardCheck],
-  //   ["/programs", "Programs", Layers3],
   ["/calendar", "Calendar", CalendarDays],
   ["/reports", "Reports & insights", ChartNoAxesCombined],
   ["/documents", "Documents", FolderOpen],
 ] as const;
+
+const engagementNav = [
+  ["/engagements", "All engagements", Route],
+  ["/activities", "Activities", Activity],
+  ["/assessments", "Assessments", ClipboardCheck],
+] as const;
+
+function matchesRoute(path: string, href: string) {
+  return path === href || (href !== "/" && path.startsWith(`${href}/`));
+}
 export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
@@ -103,6 +111,23 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
   const { data, clientId, setClientId, setData } = useSolace();
   const [role, setRole] = useState("Consultant / Admin");
   const [reset, setReset] = useState(false);
+  const inEngagementSection = engagementNav.some(([href]) =>
+    matchesRoute(path, href),
+  );
+
+  const [engagementMenuOpen, setEngagementMenuOpen] =
+    useState(inEngagementSection);
+
+  useEffect(() => {
+    if (inEngagementSection) {
+      setEngagementMenuOpen(true);
+    }
+  }, [path, inEngagementSection]);
+
+  const breadcrumbLabel =
+    engagementNav.find(([href]) => matchesRoute(path, href))?.[1] ||
+    nav.find(([href]) => matchesRoute(path, href))?.[1] ||
+    "Overview";
   return (
     <SidebarProvider
       style={{ "--sidebar-width": "252px" } as React.CSSProperties}
@@ -126,28 +151,79 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
         </SidebarHeader>
         <SidebarContent className="sidebar-scroll">
           <SidebarMenu>
-            {nav.map(([href, label, Icon]) => (
-              <SidebarMenuItem key={href}>
-                <SidebarMenuButton asChild isActive={path === href}>
-                  <Link
-                    href={href}
-                    aria-current={path === href ? "page" : undefined}
-                    onClick={() => setRole("Consultant / Admin")}
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                    {/* {label === "Engagements" && (
-                      <span className="nav-count">
-                        {
-                          data.engagements.filter((e) => e.status === "Active")
-                            .length
-                        }
-                      </span>
-                    )} */}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {nav.map(([href, label, Icon]) => {
+              if (href === "/engagements") {
+                return (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      type="button"
+                      isActive={inEngagementSection}
+                      aria-expanded={engagementMenuOpen}
+                      aria-controls="engagement-submenu"
+                      onClick={() => setEngagementMenuOpen((open) => !open)}
+                    >
+                      <Icon />
+                      <span>{label}</span>
+
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          marginLeft: "auto",
+                          transform: engagementMenuOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 180ms ease",
+                        }}
+                      />
+                    </SidebarMenuButton>
+
+                    {engagementMenuOpen && (
+                      <ul
+                        id="engagement-submenu"
+                        className="engagement-submenu"
+                      >
+                        {engagementNav.map(
+                          ([childHref, childLabel, ChildIcon]) => {
+                            const active = matchesRoute(path, childHref);
+
+                            return (
+                              <li key={childHref}>
+                                <Link
+                                  href={childHref}
+                                  className={active ? "is-active" : ""}
+                                  aria-current={active ? "page" : undefined}
+                                  onClick={() => setRole("Consultant / Admin")}
+                                >
+                                  <ChildIcon size={16} />
+                                  <span>{childLabel}</span>
+                                </Link>
+                              </li>
+                            );
+                          },
+                        )}
+                      </ul>
+                    )}
+                  </SidebarMenuItem>
+                );
+              }
+
+              const active = matchesRoute(path, href);
+
+              return (
+                <SidebarMenuItem key={href}>
+                  <SidebarMenuButton asChild isActive={active}>
+                    <Link
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => setRole("Consultant / Admin")}
+                    >
+                      <Icon />
+                      <span>{label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
           <div className="sidebar-note">
             <span className="mini-mark">
@@ -206,10 +282,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
           <div className="topbar-left">
             <SidebarTrigger />
             <span className="breadcrumb">
-              Workspace <span>/</span>{" "}
-              <strong>
-                {nav.find((n) => n[0] === path)?.[1] || "Overview"}
-              </strong>
+              Workspace <span>/</span> <strong>{breadcrumbLabel}</strong>
             </span>
           </div>
           <div className="topbar-right">
